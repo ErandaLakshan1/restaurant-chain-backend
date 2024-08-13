@@ -12,4 +12,7 @@ urlpatterns = [
     path('create/branchmanger/', views.create_branch_manger),
     path('create/staff/', views.create_staff_and_delivery_partner),
     path('create/user/', views.create_user),
+
+    path('delete/user/<int:pk>/', views.delete_user),
+    path('delete/user_account/<int:pk>/', views.delete_user_account),
 ]
