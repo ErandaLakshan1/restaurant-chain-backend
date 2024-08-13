@@ -18,4 +18,5 @@ urlpatterns = [
 
     path('update/user/<int:pk>/', views.edit_customer_account),
     path('update/user_accounts_by_admins/<int:pk>/', views.edit_user_accounts_by_admins),
+    path('update/user/', views.edit_own_account),
 ]

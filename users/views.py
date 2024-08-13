@@ -178,3 +178,40 @@ def edit_user_accounts_by_admins(request, pk, *args, **kwargs):
     except models.CustomUser.DoesNotExist:
         return Response({"detail": "User does not exist."}, status=status.HTTP_404_NOT_FOUND)
 
+
+# for edit their own accounts by users
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated])
+def edit_own_account(request, *args, **kwargs):
+    current_user = request.user
+    user_type = getattr(current_user, 'user_type')
+    print(user_type)
+
+    try:
+        user_data = models.CustomUser.objects.get(pk=current_user.pk)
+        serializer = serializers.CustomUserSerializer(user_data, data=request.data, partial=True)
+
+        if serializer.is_valid():
+            validated_data = serializer.validated_data
+
+            if user_type == 'admin':
+
+                if 'password' in validated_data:
+                    return Response({"detail": "You are not allowed to update the password."}, status=status.HTTP_400_BAD_REQUEST)
+
+            elif user_type == 'delivery_partner' or user_type == 'manager' or user_type == 'staff':
+
+                if 'user_type' in validated_data:
+                    return Response({"detail": "You are not allowed to update the user type."}, status=status.HTTP_400_BAD_REQUEST)
+
+                if 'branch' in validated_data:
+                    return Response({"detail": "You are not allowed to update the branch."}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Save updated data
+            serializer.save()
+            return Response({"detail": "Account updated successfully."}, status=status.HTTP_200_OK)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    except models.CustomUser.DoesNotExist:
+        return Response({"detail": "User does not exist."}, status=status.HTTP_404_NOT_FOUND)
