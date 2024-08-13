@@ -6,8 +6,10 @@ from . import models
 class CustomUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.CustomUser
-        fields = ['id', 'username', 'email', 'user_type', 'mobile_number', 'address', 'nic', 'branch', 'first_name', 'last_name', 'password']
+        fields = ['id', 'username', 'email', 'user_type', 'mobile_number', 'address', 'nic', 'branch', 'first_name',
+                  'last_name', 'password']
 
+    # for password validations
     def create(self, validated_data):
         # Extract the password from the validated data
         password = validated_data.pop('password', None)
@@ -22,3 +24,12 @@ class CustomUserSerializer(serializers.ModelSerializer):
         # Save the user instance
         user.save()
         return user
+
+    def update(self, instance, validated_data):
+        password = validated_data.pop('password', None)
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        if password:
+            instance.set_password(password)
+        instance.save()
+        return instance
