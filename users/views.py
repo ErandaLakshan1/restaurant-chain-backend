@@ -7,6 +7,10 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from . import models
 from . import serializers
+from django.core.mail import send_mail
+from django.conf import settings
+import random
+import string
 
 
 # for customize the tokens
@@ -39,12 +43,31 @@ def create_branch_manger(request, *args, **kwargs):
     user_type = getattr(user, 'user_type')
 
     if user_type != 'admin':
-        return Response({"detail": "You do not have permission to perform this action."}, status=status.HTTP_403_FORBIDDEN)
+        return Response({"detail": "You do not have permission to perform this action."},
+                        status=status.HTTP_403_FORBIDDEN)
 
-    serializer = serializers.CustomUserSerializer(data=request.data)
+    # generate a random password
+    password = ''.join(random.choices(string.ascii_letters + string.digits, k=12))
+
+    data = request.data.copy()
+    data['password'] = password
+
+    serializer = serializers.CustomUserSerializer(data=data)
 
     if serializer.is_valid():
-        serializer.save()
+        user = serializer.save()
+
+        # send email with the password
+        send_mail(
+            'Your New Account Password',
+            f'Your account has been created.\n'
+            f'Your username is: {request.data["username"]}.\n'
+            f'Your password is: {password}.\n'
+            f'You can change this by navigate to your profile.\nThank you.',
+            settings.DEFAULT_FROM_EMAIL,
+            [user.email],
+            fail_silently=False,
+        )
         return Response({"detail": "Account created successfully."}, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -55,16 +78,41 @@ def create_branch_manger(request, *args, **kwargs):
 def create_staff_and_delivery_partner(request, *args, **kwargs):
     user = request.user
     user_type = getattr(user, 'user_type')
+    user_branch = getattr(user, 'branch')
 
-    print(user_type)
+    print(user_branch)
+    print(request.data['branch'])
 
     if user_type not in ['admin', 'manager']:
-        return Response({"detail": "You do not have permission to perform this action."}, status=status.HTTP_403_FORBIDDEN)
+        return Response({"detail": "You do not have permission to perform this action."},
+                        status=status.HTTP_403_FORBIDDEN)
 
-    serializer = serializers.CustomUserSerializer(data=request.data)
+    if user_type == 'manager' and user_branch != request.data['branch']:
+        return Response({"detail": "You do not have permission to perform this action."},
+                        status=status.HTTP_403_FORBIDDEN)
+
+    # generate a random password
+    password = ''.join(random.choices(string.ascii_letters + string.digits, k=12))
+
+    data = request.data.copy()
+    data['password'] = password
+
+    serializer = serializers.CustomUserSerializer(data=data)
 
     if serializer.is_valid():
-        serializer.save()
+        user = serializer.save()
+
+        # send email with the password
+        send_mail(
+            'Your New Account Password',
+            f'Your account has been created.\n'
+            f'Your username is: {request.data["username"]}.\n'
+            f'Your password is: {password}.\n'
+            f'You can change this by navigate to your profile.\nThank you.',
+            settings.DEFAULT_FROM_EMAIL,
+            [user.email],
+            fail_silently=False,
+        )
         return Response({"detail": "Account created successfully."}, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -91,11 +139,13 @@ def delete_user(request, pk, *args, **kwargs):
     try:
         user_data = models.CustomUser.objects.get(pk=pk)
 
-        if (user_type == 'admin' and user_data.branch != '') or (user_type == 'manager' and user_data.branch == user_branch):
+        if (user_type == 'admin' and user_data.branch != '') or (
+                user_type == 'manager' and user_data.branch == user_branch):
             user_data.delete()
             return Response({"detail": "User deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
 
-        return Response({"detail": "You do not have permission to perform this action."}, status=status.HTTP_403_FORBIDDEN)
+        return Response({"detail": "You do not have permission to perform this action."},
+                        status=status.HTTP_403_FORBIDDEN)
 
     except models.CustomUser.DoesNotExist:
         return Response({"detail": "User does not exist."}, status=status.HTTP_404_NOT_FOUND)
@@ -104,7 +154,7 @@ def delete_user(request, pk, *args, **kwargs):
 # for delete customer account
 @api_view(['DELETE'])
 @permission_classes([IsAuthenticated])
-def delete_customer_account(request,  *args, **kwargs):
+def delete_customer_account(request, *args, **kwargs):
     user = request.user
     user_id = getattr(user, 'id')
 
@@ -115,7 +165,8 @@ def delete_customer_account(request,  *args, **kwargs):
             user_data.delete()
             return Response({"detail": "your account successfully deleted."}, status=status.HTTP_204_NO_CONTENT)
 
-        return Response({"detail": "You do not have permission to perform this action."}, status=status.HTTP_403_FORBIDDEN)
+        return Response({"detail": "You do not have permission to perform this action."},
+                        status=status.HTTP_403_FORBIDDEN)
 
     except models.CustomUser.DoesNotExist:
 
@@ -139,7 +190,8 @@ def edit_customer_account(request, pk, *args, **kwargs):
                 return Response({"detail": "Account updated successfully."}, status=status.HTTP_201_CREATED)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        return Response({"detail": "You do not have permission to perform this action."}, status=status.HTTP_403_FORBIDDEN)
+        return Response({"detail": "You do not have permission to perform this action."},
+                        status=status.HTTP_403_FORBIDDEN)
 
     except models.CustomUser.DoesNotExist:
 
@@ -157,23 +209,27 @@ def edit_user_accounts_by_admins(request, pk, *args, **kwargs):
     try:
         user_data = models.CustomUser.objects.get(pk=pk)
 
-        if (user_type == 'admin' and user_data.branch != '') or (user_type == 'manager' and user_data.branch == user_branch):
+        if (user_type == 'admin' and user_data.branch != '') or (
+                user_type == 'manager' and user_data.branch == user_branch):
             serializer = serializers.CustomUserSerializer(user_data, data=request.data, partial=True)
             if serializer.is_valid():
                 validated_data = serializer.validated_data
 
                 # restrict the admins to change the password or the username
                 if 'username' in validated_data or 'password' in validated_data:
-                    return Response({"detail": "You are not allowed to update the username or password."}, status=status.HTTP_400_BAD_REQUEST)
+                    return Response({"detail": "You are not allowed to update the username or password."},
+                                    status=status.HTTP_400_BAD_REQUEST)
 
                 if user_type == 'manager' and 'user_type' in validated_data:
-                    return Response({"detail": "Your are not allowed to change the user type."}, status=status.HTTP_400_BAD_REQUEST)
+                    return Response({"detail": "Your are not allowed to change the user type."},
+                                    status=status.HTTP_400_BAD_REQUEST)
 
                 serializer.save()
                 return Response({"detail": "Account updated successfully."}, status=status.HTTP_200_OK)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        return Response({"detail": "You do not have permission to perform this action."}, status=status.HTTP_403_FORBIDDEN)
+        return Response({"detail": "You do not have permission to perform this action."},
+                        status=status.HTTP_403_FORBIDDEN)
 
     except models.CustomUser.DoesNotExist:
         return Response({"detail": "User does not exist."}, status=status.HTTP_404_NOT_FOUND)
@@ -197,15 +253,18 @@ def edit_own_account(request, *args, **kwargs):
             if user_type == 'admin':
 
                 if 'password' in validated_data:
-                    return Response({"detail": "You are not allowed to update the password."}, status=status.HTTP_400_BAD_REQUEST)
+                    return Response({"detail": "You are not allowed to update the password."},
+                                    status=status.HTTP_400_BAD_REQUEST)
 
             elif user_type == 'delivery_partner' or user_type == 'manager' or user_type == 'staff':
 
                 if 'user_type' in validated_data:
-                    return Response({"detail": "You are not allowed to update the user type."}, status=status.HTTP_400_BAD_REQUEST)
+                    return Response({"detail": "You are not allowed to update the user type."},
+                                    status=status.HTTP_400_BAD_REQUEST)
 
                 if 'branch' in validated_data:
-                    return Response({"detail": "You are not allowed to update the branch."}, status=status.HTTP_400_BAD_REQUEST)
+                    return Response({"detail": "You are not allowed to update the branch."},
+                                    status=status.HTTP_400_BAD_REQUEST)
 
             # Save updated data
             serializer.save()
