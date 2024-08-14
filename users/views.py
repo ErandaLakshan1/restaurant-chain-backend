@@ -101,15 +101,15 @@ def delete_user(request, pk, *args, **kwargs):
         return Response({"detail": "User does not exist."}, status=status.HTTP_404_NOT_FOUND)
 
 
-# for delete user customer
+# for delete customer account
 @api_view(['DELETE'])
 @permission_classes([IsAuthenticated])
-def delete_customer_account(request, pk, *args, **kwargs):
+def delete_customer_account(request,  *args, **kwargs):
     user = request.user
     user_id = getattr(user, 'id')
 
     try:
-        user_data = models.CustomUser.objects.get(pk=pk)
+        user_data = models.CustomUser.objects.get(pk=user.pk)
 
         if user_id == user_data.id:
             user_data.delete()
