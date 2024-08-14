@@ -41,7 +41,7 @@ password = ''.join(random.choices(string.ascii_letters + string.digits, k=12))
 # for create a branch manager
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
-def create_branch_manger(request, *args, **kwargs):
+def create_branch_manager(request, *args, **kwargs):
     user = request.user
     # get user_type from the authenticated user
     user_type = getattr(user, 'user_type')
@@ -80,9 +80,6 @@ def create_staff_and_delivery_partner(request, *args, **kwargs):
     user = request.user
     user_type = getattr(user, 'user_type')
     user_branch = getattr(user, 'branch')
-
-    print(user_branch)
-    print(request.data['branch'])
 
     if user_type not in ['admin', 'manager']:
         return Response({"detail": "You do not have permission to perform this action."},

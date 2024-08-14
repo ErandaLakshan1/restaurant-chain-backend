@@ -10,7 +10,7 @@ class CustomUser(AbstractUser):
     address = models.CharField(max_length=100, null=True, blank=True)
     nic = models.CharField(max_length=50, null=True, blank=True)
     email = models.EmailField(unique=True)
-    branch = models.CharField(max_length=50, null=True, blank=True, default="")
+    branch = models.ForeignKey('branches.Branch', on_delete=models.SET_NULL, null=True, blank=True, related_name='users')
 
 
 
