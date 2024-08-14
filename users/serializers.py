@@ -1,13 +1,17 @@
 from rest_framework import serializers
 from . import models
+from branches.serializers import BranchSerializer
 
 
 # creating the serializer class for the user model
 class CustomUserSerializer(serializers.ModelSerializer):
+    # branch = BranchSerializer()
+
     class Meta:
         model = models.CustomUser
         fields = ['id', 'username', 'email', 'user_type', 'mobile_number', 'address', 'nic', 'branch', 'first_name',
                   'last_name', 'password']
+        extra_kwargs = {'password': {'write_only': True}}
 
     # for password validations
     def create(self, validated_data):

@@ -24,7 +24,7 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
         token['username'] = user.username
         token['email'] = user.email
         token['user_type'] = user.user_type
-        token['branch'] = user.branch
+        token['branch'] = user.branch.pk if user.branch else None
         token['name'] = user.first_name + ' ' + user.last_name
 
         return token
@@ -34,60 +34,28 @@ class MyTokenObtainPairView(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer
 
 
-# to generate a random password
-password = ''.join(random.choices(string.ascii_letters + string.digits, k=12))
-
-
-# for create a branch manager
+# for create a branch manager staff and delivery partner
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
-def create_branch_manager(request, *args, **kwargs):
-    user = request.user
-    # get user_type from the authenticated user
-    user_type = getattr(user, 'user_type')
-
-    if user_type != 'admin':
-        return Response({"detail": "You do not have permission to perform this action."},
-                        status=status.HTTP_403_FORBIDDEN)
-
-    data = request.data.copy()
-    data['password'] = password
-
-    serializer = serializers.CustomUserSerializer(data=data)
-
-    if serializer.is_valid():
-        user = serializer.save()
-
-        # send email with the password
-        send_mail(
-            'Your New Account Password',
-            f'Your account has been created.\n'
-            f'Your username is: {request.data["username"]}.\n'
-            f'Your password is: {password}.\n'
-            f'You can change this by navigate to your profile.\nThank you.',
-            settings.DEFAULT_FROM_EMAIL,
-            [user.email],
-            fail_silently=False,
-        )
-        return Response({"detail": "Account created successfully."}, status=status.HTTP_201_CREATED)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-# for create staff and delivery partner
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def create_staff_and_delivery_partner(request, *args, **kwargs):
+def create_staff(request, *args, **kwargs):
     user = request.user
     user_type = getattr(user, 'user_type')
     user_branch = getattr(user, 'branch')
+
+    print(user_branch.pk)
+    print(request.data['branch'])
+    print(user_branch.pk != request.data['branch'])
 
     if user_type not in ['admin', 'manager']:
         return Response({"detail": "You do not have permission to perform this action."},
                         status=status.HTTP_403_FORBIDDEN)
 
-    if user_type == 'manager' and user_branch != request.data['branch']:
+    if user_type == 'manager' and user_branch.pk != int(request.data['branch']):
         return Response({"detail": "You do not have permission to perform this action."},
                         status=status.HTTP_403_FORBIDDEN)
+
+    # to generate a random password
+    password = ''.join(random.choices(string.ascii_letters + string.digits, k=12))
 
     data = request.data.copy()
     data['password'] = password
@@ -97,24 +65,25 @@ def create_staff_and_delivery_partner(request, *args, **kwargs):
     if serializer.is_valid():
         user = serializer.save()
 
-        # send email with the password
+        # Send email with the password
         send_mail(
             'Your New Account Password',
             f'Your account has been created.\n'
-            f'Your username is: {request.data["username"]}.\n'
+            f'Your username is: {request.data.get("username")}.\n'
             f'Your password is: {password}.\n'
-            f'You can change this by navigate to your profile.\nThank you.',
+            f'You can change this by navigating to your profile.\nThank you.',
             settings.DEFAULT_FROM_EMAIL,
             [user.email],
             fail_silently=False,
         )
         return Response({"detail": "Account created successfully."}, status=status.HTTP_201_CREATED)
+
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 # for register user
 @api_view(['POST'])
-def create_user(request, *args, **kwargs):
+def register_user(request, *args, **kwargs):
     serializer = serializers.CustomUserSerializer(data=request.data)
 
     if serializer.is_valid():
@@ -130,6 +99,7 @@ def delete_user(request, pk, *args, **kwargs):
     current_user = request.user
     user_type = getattr(current_user, 'user_type')
     user_branch = getattr(current_user, 'branch')
+
 
     try:
         user_data = models.CustomUser.objects.get(pk=pk)
@@ -269,3 +239,12 @@ def edit_own_account(request, *args, **kwargs):
 
     except models.CustomUser.DoesNotExist:
         return Response({"detail": "User does not exist."}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_user_account(request, pk=None, *args, **kwargs):
+    current_user = request.user
+    user = models.CustomUser.objects.get(pk=current_user.pk)
+    serializer = serializers.CustomUserSerializer(user)
+    return Response(serializer.data, status=status.HTTP_200_OK)
