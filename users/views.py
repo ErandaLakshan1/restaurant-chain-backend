@@ -100,7 +100,6 @@ def delete_user(request, pk, *args, **kwargs):
     user_type = getattr(current_user, 'user_type')
     user_branch = getattr(current_user, 'branch')
 
-
     try:
         user_data = models.CustomUser.objects.get(pk=pk)
 
@@ -245,6 +244,68 @@ def edit_own_account(request, *args, **kwargs):
 @permission_classes([IsAuthenticated])
 def get_user_account(request, pk=None, *args, **kwargs):
     current_user = request.user
-    user = models.CustomUser.objects.get(pk=current_user.pk)
-    serializer = serializers.CustomUserSerializer(user)
-    return Response(serializer.data, status=status.HTTP_200_OK)
+    user_type = getattr(current_user, 'user_type')
+    user_branch = getattr(current_user, 'branch')
+
+    if pk:
+
+        try:
+            user_data = models.CustomUser.objects.get(pk=pk)
+
+            if user_type == 'admin' or user_type == 'manager' and user_data.branch == user_branch:
+
+                if user_data.user_type == "customer":
+                    return Response({"detail": "You do not have permission to perform this action."},
+                                    status=status.HTTP_403_FORBIDDEN)
+
+                serializer = serializers.CustomUserSerializer(user_data)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+
+            return Response({"detail": "You do not have permission to perform this action."},
+                            status=status.HTTP_403_FORBIDDEN)
+
+        except models.CustomUser.DoesNotExist:
+            return Response({"detail": "User does not exist."}, status=status.HTTP_404_NOT_FOUND)
+
+    else:
+        user = models.CustomUser.objects.get(pk=current_user.pk)
+        serializer = serializers.CustomUserSerializer(user)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+# to get staff list by the branch
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_staff_by_branch(request, pk=None, *args, **kwargs):
+    current_user = request.user
+    user_type = getattr(current_user, 'user_type')
+    user_branch = getattr(current_user, 'branch')
+
+    if pk:
+        if user_type == "admin":
+
+            user_data = models.CustomUser.objects.filter(branch=pk)
+
+            if user_data.exists():
+                serializer = serializers.CustomUserSerializer(user_data, many=True)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+
+            else:
+                return Response({"detail": "No staff found for this branch."}, status=status.HTTP_404_NOT_FOUND)
+
+        return Response({"detail": "You do not have permission to perform this action."},
+                        status=status.HTTP_403_FORBIDDEN)
+
+    else:
+        if user_type == "manager":
+            user_data = models.CustomUser.objects.filter(branch=user_branch)
+
+            if user_data.exists():
+                serializer = serializers.CustomUserSerializer(user_data, many=True)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+
+            else:
+                return Response({"detail": "No staff found for this branch."}, status=status.HTTP_404_NOT_FOUND)
+        else:
+            return Response({"detail": "You do not have permission to perform this action."},
+                            status=status.HTTP_403_FORBIDDEN)

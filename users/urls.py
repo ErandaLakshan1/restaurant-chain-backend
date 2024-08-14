@@ -19,5 +19,10 @@ urlpatterns = [
     path('update/user_accounts_by_admins/<int:pk>/', views.edit_user_accounts_by_admins),
     path('update/user/account/', views.edit_own_account),
 
-    path('get/user_account/', views.get_user_account)
+    path('get/user_account/', views.get_user_account),
+    path('get/user_account/<int:pk>/', views.get_user_account),
+
+    path('get/users_by_branch/', views.get_staff_by_branch),
+    path('get/users_by_branch/<int:pk>/', views.get_staff_by_branch)
+
 ]
