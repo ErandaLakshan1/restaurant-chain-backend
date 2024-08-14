@@ -34,6 +34,10 @@ class MyTokenObtainPairView(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer
 
 
+# to generate a random password
+password = ''.join(random.choices(string.ascii_letters + string.digits, k=12))
+
+
 # for create a branch manager
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -45,9 +49,6 @@ def create_branch_manger(request, *args, **kwargs):
     if user_type != 'admin':
         return Response({"detail": "You do not have permission to perform this action."},
                         status=status.HTTP_403_FORBIDDEN)
-
-    # generate a random password
-    password = ''.join(random.choices(string.ascii_letters + string.digits, k=12))
 
     data = request.data.copy()
     data['password'] = password
@@ -90,9 +91,6 @@ def create_staff_and_delivery_partner(request, *args, **kwargs):
     if user_type == 'manager' and user_branch != request.data['branch']:
         return Response({"detail": "You do not have permission to perform this action."},
                         status=status.HTTP_403_FORBIDDEN)
-
-    # generate a random password
-    password = ''.join(random.choices(string.ascii_letters + string.digits, k=12))
 
     data = request.data.copy()
     data['password'] = password
