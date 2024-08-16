@@ -167,3 +167,7 @@ data.py
 
 .DS_Store
 DS_Store
+
+
+firebase_cred.json
+.firebase_cred.json

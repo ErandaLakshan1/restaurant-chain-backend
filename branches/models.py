@@ -1,4 +1,5 @@
 from django.db import models
+import json
 
 
 # Create your models here.
@@ -9,6 +10,13 @@ class Branch(models.Model):
     longitude = models.FloatField()
     latitude = models.FloatField()
 
+    def __str__(self):
+        return self.name
 
-def __str__(self):
-    return self.name
+
+class BranchImage(models.Model):
+    branch = models.ForeignKey(Branch, on_delete=models.CASCADE)
+    image_url = models.URLField()
+
+    def __str__(self):
+        return f"Image for {self.branch.name} - {self.image_url}"
