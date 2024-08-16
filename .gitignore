@@ -171,3 +171,5 @@ DS_Store
 
 firebase_cred.json
 .firebase_cred.json
+firebase_config.py
+.firebase_config.py
