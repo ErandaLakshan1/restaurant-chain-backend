@@ -24,4 +24,6 @@ urlpatterns = [
     path('api/users/', include('users.urls')),
     # for branches
     path('api/branches/', include('branches.urls')),
+    # for menu
+    path('api/menu/', include('menu.urls'))
 ]
