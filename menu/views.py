@@ -27,7 +27,8 @@ def create_menu(request, *args, **kwargs):
 
     for image in image_files:
         if not isinstance(image, InMemoryUploadedFile):
-            return Response({"detail": "Uploaded file is not in the correct format."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": "Uploaded file is not in the correct format."},
+                            status=status.HTTP_400_BAD_REQUEST)
 
         # create a blob for Firebase Storage
         blob = bucket.blob(f'menu_images/{image.name}')
@@ -72,3 +73,40 @@ def create_menu(request, *args, **kwargs):
     return Response({"detail": "Menu item added successfully.", "menu": serializer.data}, status=status.HTTP_200_OK)
 
 
+# to get menu items for admins
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_menu_items(request, pk=None, *args, **kwargs):
+    user = request.user
+    user_type = getattr(user, 'user_type')
+    user_branch = getattr(user, 'branch')
+
+    if user_type in ['customer', 'delivery_partner']:
+        return Response({"detail: You do not have permission to perform this actions."},
+                        status=status.HTTP_403_FORBIDDEN)
+
+    if user_type in ['manager', 'staff']:
+        if pk:
+            try:
+                menu_item = models.Menu.objects.get(pk=pk, branch=user_branch)
+                serializer = serializers.MenuSerializer(menu_item)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+
+            except models.Menu.DoesNotExist:
+                return Response({"detail": "Menu item does not exist."}, status=status.HTTP_404_NOT_FOUND)
+
+        menu_items = models.Menu.objects.filter(branch=user_branch)
+        serializer = serializers.MenuSerializer(menu_items, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    if pk:
+        try:
+            menu_item = models.Menu.objects.get(pk=pk)
+            serializer = serializers.MenuSerializer(menu_item)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except models.Menu.DoesNotExist:
+            return Response({"detail": "Menu item does not exist."}, status=status.HTTP_404_NOT_FOUND)
+
+    menu_items = models.Menu.objects.all()
+    serializer = serializers.MenuSerializer(menu_items, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)

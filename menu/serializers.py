@@ -10,7 +10,7 @@ class MenuImageSerializer(serializers.ModelSerializer):
 
 class MenuSerializer(serializers.ModelSerializer):
 
-    images = MenuImageSerializer(many=True, read_only=True)
+    images = MenuImageSerializer(many=True, read_only=True, source='menuimage_set')
 
     class Meta:
         model = Menu
