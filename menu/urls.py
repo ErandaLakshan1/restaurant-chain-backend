@@ -13,6 +13,7 @@ urlpatterns = [
     path('update/menu_item_images/<int:pk>/', views.add_images_to_menu_item),
 
     path('delete/menu_item_images/<int:pk>/', views.delete_menu_item_images),
+    path('delete/menu_item/<int:pk>/', views.delete_menu_item),
 
 
 ]

@@ -179,7 +179,8 @@ def delete_menu_item_images(request, pk, *args, **kwargs):
     menu_item = menu_item_image.menu
 
     if user_type in ['manager', 'staff'] and menu_item.branch != user_branch:
-        return Response({"detail": "You do not have permission to perform this action."}, status=status.HTTP_403_FORBIDDEN)
+        return Response({"detail": "You do not have permission to perform this action."},
+                        status=status.HTTP_403_FORBIDDEN)
 
     # extract the file name from the image url
     image_url = menu_item_image.image_url
@@ -213,7 +214,8 @@ def add_images_to_menu_item(request, pk, *args, **kwargs):
         return Response({"detail": "Menu item does not exist."}, status=status.HTTP_404_NOT_FOUND)
 
     if user_type in ['manager', 'staff'] and menu_item.branch != user_branch:
-        return Response({"detail": "You do not have permission to perform this action."}, status=status.HTTP_403_FORBIDDEN)
+        return Response({"detail": "You do not have permission to perform this action."},
+                        status=status.HTTP_403_FORBIDDEN)
 
     image_files = request.FILES.getlist('images')
 
@@ -224,7 +226,8 @@ def add_images_to_menu_item(request, pk, *args, **kwargs):
 
     for image in image_files:
         if not isinstance(image, InMemoryUploadedFile):
-            return Response({"detail": "Uploaded file is not in the correct format."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": "Uploaded file is not in the correct format."},
+                            status=status.HTTP_400_BAD_REQUEST)
 
         blob = bucket.blob(f'menu_images/{image.name}')
         blob.upload_from_file(image, content_type=image.content_type)
@@ -236,3 +239,41 @@ def add_images_to_menu_item(request, pk, *args, **kwargs):
 
     models.MenuImage.objects.bulk_create(menu_item_images)
     return Response({"detail": "Images added successfully."}, status=status.HTTP_200_OK)
+
+
+# to delete menu item
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def delete_menu_item(request, pk, *args, **kwargs):
+    user = request.user
+    user_type = getattr(user, 'user_type')
+    user_branch = getattr(user, 'branch')
+
+    if user_type not in ['admin', 'manager']:
+        return Response({"detail": "You do not have permission to perform this action."},
+                        status=status.HTTP_403_FORBIDDEN)
+
+    try:
+        menu_item = models.Menu.objects.get(pk=pk)
+
+        if user_type == "manager" and menu_item.branch != user_branch:
+            return Response({"detail": "You do not have permission to perform this action."},
+                            status=status.HTTP_403_FORBIDDEN)
+
+        menu_item_images = models.MenuImage.objects.filter(menu=menu_item)
+
+        for menu_item_image in menu_item_images:
+            image_url = menu_item_image.image_url
+            file_name = image_url.split('/')[-1]
+
+            blob = bucket.blob(f'menu_images/{file_name}')
+            if blob.exists():
+                blob.delete()
+
+            menu_item_image.delete()
+
+        menu_item.delete()
+        return Response({"detail": "Menu item deleted successfully."}, status=status.HTTP_200_OK)
+
+    except models.Menu.DoesNotExist:
+        return Response({"detail": "Menu item does not exist."}, status=status.HTTP_404_NOT_FOUND)
