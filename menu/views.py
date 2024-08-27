@@ -110,3 +110,20 @@ def get_menu_items(request, pk=None, *args, **kwargs):
     menu_items = models.Menu.objects.all()
     serializer = serializers.MenuSerializer(menu_items, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+# to get menu items by users according to branch
+@api_view(['GET'])
+def get_meu_items_according_to_branch(request, branch_id, pk=None, *args, **kwargs):
+    if pk:
+        try:
+            menu_item = models.Menu.objects.get(pk=pk, branch=branch_id)
+            serializer = serializers.MenuSerializer(menu_item)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        except models.Menu.DoesNotExist:
+            return Response({"detail": "Menu item does not exist."}, status=status.HTTP_404_NOT_FOUND)
+
+    menu_items = models.Menu.objects.filter(branch=branch_id)
+    serializer = serializers.MenuSerializer(menu_items, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)
