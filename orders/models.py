@@ -6,13 +6,37 @@ import datetime
 
 
 # Create your models here.
+class Cart(models.Model):
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    items = models.ManyToManyField(Menu, through='CartItem')
+    branch = models.ForeignKey(Branch, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Cart {self.id} for user {self.user.username}"
+
+    def is_expired(self):
+        return (datetime.datetime.now(datetime.timezone.utc) - self.created_at) > datetime.timedelta(days=1)
+
+
+class CartItem(models.Model):
+    cart = models.ForeignKey(Cart, on_delete=models.CASCADE)
+    menu_item = models.ForeignKey(Menu, on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField(default=1)
+    added_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"CartItem {self.id} in cart {self.cart.id}"
+
+
 class Coupon(models.Model):
     code = models.CharField(max_length=50, unique=True)
     discount_percentage = models.DecimalField(max_digits=5, decimal_places=2)
     expiration_date = models.DateField()
 
     def __str__(self):
-        return self.code
+        return f"Coupon {self.code}"
 
 
 class Order(models.Model):
