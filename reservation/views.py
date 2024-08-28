@@ -209,3 +209,33 @@ def delete_reservation(request, pk, *args, **kwargs):
 
     reservation.delete()
     return Response({"detail": "Reservation deleted successfully."}, status=status.HTTP_200_OK)
+
+
+# to view the reservations by admins
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_reservation_list_by_admins(request, *args, **kwargs):
+    user = request.user
+    user_type = getattr(user, 'user_type')
+    user_branch = getattr(user, 'branch')
+
+    if user_type in ['customer', 'delivery_partner']:
+        return Response({"detail": "You do not have permission to perform this action."},
+                        status=status.HTTP_403_FORBIDDEN)
+
+    if user_type in ['manager', 'staff']:
+        reservations = models.Reservation.objects.filter(table__branch=user_branch)
+        serializer = serializers.ReservationSerializer(reservations, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    else:
+        
+        branches = Branch.objects.all()
+        branch_reservations = {}
+        for branch in branches:
+            reservations = models.Reservation.objects.filter(table__branch=branch)
+            serializer = serializers.ReservationSerializer(reservations, many=True)
+            branch_reservations[branch.name] = serializer.data
+
+        return Response(branch_reservations, status=status.HTTP_200_OK)
+
