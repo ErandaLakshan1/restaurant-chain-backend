@@ -25,5 +25,7 @@ urlpatterns = [
     # for branches
     path('api/branches/', include('branches.urls')),
     # for menu
-    path('api/menu/', include('menu.urls'))
+    path('api/menu/', include('menu.urls')),
+    # for reservations
+    path('api/reservation/', include('reservation.urls'))
 ]

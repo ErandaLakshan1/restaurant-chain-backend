@@ -46,7 +46,8 @@ INSTALLED_APPS = [
 
     'users',
     'branches',
-    'menu'
+    'menu',
+    'reservation'
 ]
 
 MIDDLEWARE = [
