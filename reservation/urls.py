@@ -10,4 +10,14 @@ urlpatterns = [
     path('update/table/<int:pk>/', views.update_table_details),
 
     path('delete/table/<int:pk>/', views.delete_table),
+
+    path('create/reservation/', views.make_reservation),
+
+    path('get/reservations/', views.get_reservation_list),
+    path('get/reservation/<int:pk>/', views.get_reservation_list),
+
+    path('update/reservation/<int:pk>/', views.update_reservation_details),
+    path('delete/reservation/<int:pk>/', views.delete_reservation),
+
+
 ]

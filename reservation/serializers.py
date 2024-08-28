@@ -14,15 +14,20 @@ class ReservationSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def validate(self, data):
-        table = data['table']
-        reservation_date = data['reservation_date']
+        instance = getattr(self, 'instance', None)
 
-        conflicting_reservations = Reservation.objects.filter(
-            table=table,
-            reservation_date=reservation_date,
-        )
+        table = data.get('table', getattr(instance, 'table', None))
+        reservation_date = data.get('reservation_date', getattr(instance, 'reservation_date', None))
 
-        if conflicting_reservations.exists():
-            raise serializers.ValidationError("This table is already reserved for the selected date")
+        if table and reservation_date:
+            conflicting_reservations = Reservation.objects.filter(
+                table=table,
+                reservation_date=reservation_date
+            )
+            if instance:
+                conflicting_reservations = conflicting_reservations.exclude(pk=instance.pk)
+
+            if conflicting_reservations.exists():
+                raise serializers.ValidationError("This table is already reserved for the selected date")
 
         return data
