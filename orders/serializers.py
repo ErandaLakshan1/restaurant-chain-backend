@@ -1,15 +1,19 @@
 from rest_framework import serializers
 from .models import Order, Coupon, Cart, CartItem
+from menu.serializers import MenuSerializer
 
 
 class CartItemSerializer(serializers.ModelSerializer):
+
+    menu_item = MenuSerializer(read_only=True)
+
     class Meta:
         model = CartItem
         fields = ['id', 'menu_item', 'quantity', 'added_at']
 
 
 class CartSerializer(serializers.ModelSerializer):
-    items = CartItemSerializer(many=True)
+    items = CartItemSerializer(many=True,  source='cartitem_set')
 
     class Meta:
         model = Cart
