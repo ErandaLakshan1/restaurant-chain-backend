@@ -16,6 +16,16 @@ urlpatterns = [
     path('get/cart/', views.get_cart),
 
     path('delete/cart_item/<int:pk>/', views.delete_cart_item),
-    path('delete/cart/', views.delete_cart)
+    path('delete/cart/', views.delete_cart),
+
+    path('create/order/', views.place_order),
+
+    path('get/ordres_by_admin_according_branches/<int:branch_id>/', views.get_placed_orders),
+    path('get/ordre_by_admin_according_branche/<int:branch_id>/<int:pk>/', views.get_placed_orders),
+
+
+    path('get/order_histroy_by_user/', views.get_the_order_history),
+    path('get/order_histroy_by_user/<int:pk>/', views.get_the_order_history),
+
 
 ]

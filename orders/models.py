@@ -56,13 +56,11 @@ class Order(models.Model):
     def __str__(self):
         return f"Order {self.id} by {self.customer.username}"
 
-    def apply_coupon(self):
-        if self.coupon and self.coupon.expiration_date >= datetime.date.today():
-            self.discount_applied = (self.total_price * self.coupon.discount_percentage) / 100
-            self.final_price = self.total_price - self.discount_applied
-        else:
-            self.final_price = self.total_price
 
-    def save(self, *args, **kwargs):
-        self.apply_coupon()
-        super().save(*args, **kwargs)
+class OrderItem(models.Model):
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='order_items')
+    menu_item = models.ForeignKey(Menu, on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField(default=1)
+
+    def __str__(self):
+        return f"{self.quantity} of {self.menu_item.name} in order {self.order.id}"

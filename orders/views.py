@@ -6,6 +6,7 @@ from . import models
 from . import serializers
 from branches.models import Branch
 from menu.models import Menu
+from .models import Coupon
 
 
 # Create your views here.
@@ -183,3 +184,116 @@ def delete_cart(request, *args, **kwargs):
         cart.delete()
         return Response({"detail": "Cart deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
     return Response({"detail": "Cart does not exist."}, status=status.HTTP_404_NOT_FOUND)
+
+
+# to place the order
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def place_order(request, *args, **kwargs):
+    user = request.user
+    cart_id = request.data.get('cart_id')
+    order_type = request.data.get('order_type')
+    coupon_code = request.data.get('coupon_code')
+
+    # check the cart exits
+    try:
+        cart = models.Cart.objects.get(id=cart_id, user=user)
+    except models.Cart.DoesNotExist:
+        return Response({"detail": "Cart does not exist."}, status=status.HTTP_404_NOT_FOUND)
+
+    # calculate the total price
+    total_price = sum(item.menu_item.price * item.quantity for item in cart.cartitem_set.all())
+
+    # apply the coupon code and calculate the discount
+    discount_applied = 0
+    coupon = None
+    if coupon_code:
+        try:
+            coupon = models.Coupon.objects.get(code=coupon_code)
+            discount_applied = (total_price * coupon.discount_percentage) / 100
+        except models.Coupon.DoesNotExist:
+            return Response({"detail": "Invalid coupon code."}, status=status.HTTP_404_NOT_FOUND)
+
+    final_price = total_price - discount_applied
+
+    # create a new order
+    order = models.Order.objects.create(
+        customer=user,
+        branch=cart.branch,
+        order_type=order_type,
+        total_price=total_price,
+        discount_applied=discount_applied,
+        final_price=final_price,
+        coupon=coupon
+    )
+
+    # adding cart items to order items table and delete the cart
+    cart_items = models.CartItem.objects.filter(cart=cart)
+    for cart_item in cart_items:
+        models.OrderItem.objects.create(
+            order=order,
+            menu_item=cart_item.menu_item,
+            quantity=cart_item.quantity,
+        )
+    cart.delete()
+
+    serializer = serializers.OrderSerializer(order)
+    return Response({"detail": "Order placed successfully", "data": serializer.data}, status=status.HTTP_201_CREATED)
+
+
+# to view the places orders by admins according to branch
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_placed_orders(request, branch_id, pk=None, *args, **kwargs):
+    user = request.user
+    user_type = getattr(user, 'user_type')
+    user_branch = getattr(user, 'branch')
+
+    if user_type in ['customer', 'delivery_partner']:
+        return Response({"detail: You do not have permission to perform this actions."},
+                        status=status.HTTP_403_FORBIDDEN)
+
+    if user_type in ['manger', 'staff'] and branch_id != user_branch.id:
+        return Response({"detail: You do not have permission to perform this actions."},
+                        status=status.HTTP_403_FORBIDDEN)
+
+    if pk:
+        try:
+            order = models.Order.objects.get(pk=pk, branch=branch_id)
+            serializer = serializers.OrderSerializer(order)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except models.Order.DoesNotExist:
+            return Response({"detail": "Order not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    orders = models.Order.objects.filter(branch=branch_id)
+
+    if not orders.exists():
+        return Response({"detail": "No orders found for this branch."}, status=status.HTTP_404_NOT_FOUND)
+
+    serializer = serializers.OrderSerializer(orders, many=True)
+
+    return Response({"orders": serializer.data}, status=status.HTTP_200_OK)
+
+
+# to view the order history by user
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_the_order_history(request, pk=None, *args, **kwargs):
+    user = request.user
+    user_type = getattr(user, 'user_type')
+
+    if user_type != "customer":
+        return Response({"detail: You do not have permission to perform this actions."},
+                        status=status.HTTP_403_FORBIDDEN)
+
+    if pk:
+        try:
+            order = models.Order.objects.get(pk=pk)
+            serializer = serializers.OrderSerializer(order)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except models.Order.DoesNotExist:
+            return Response({"detail": "Order not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    orders = models.Order.objects.filter(customer=user)
+    serializer = serializers.OrderSerializer(orders, many=True)
+    return Response({"orders": serializer.data}, status=status.HTTP_200_OK)
