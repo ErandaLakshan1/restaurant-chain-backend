@@ -63,7 +63,8 @@ def create_branch(request, *args, **kwargs):
         address=request.data.get('address'),
         contact_number=request.data.get('contact_number'),
         longitude=request.data.get('longitude'),
-        latitude=request.data.get('latitude')
+        latitude=request.data.get('latitude'),
+        description=request.data.get('description'),
     )
     branch.save()
 

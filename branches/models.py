@@ -9,6 +9,7 @@ class Branch(models.Model):
     contact_number = models.CharField(max_length=20)
     longitude = models.FloatField()
     latitude = models.FloatField()
+    description = models.TextField(blank=False, null=False)
 
     def __str__(self):
         return self.name
