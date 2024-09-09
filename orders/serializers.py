@@ -36,10 +36,18 @@ class OrderItemSerializer(serializers.ModelSerializer):
 class OrderSerializer(serializers.ModelSerializer):
     coupon = CouponSerializer(read_only=True)
     order_items = OrderItemSerializer(many=True)
+    customer_first_name = serializers.SerializerMethodField()
+    customer_last_name = serializers.SerializerMethodField()
 
     class Meta:
         model = Order
         fields = [
-            'id', 'customer', 'branch', 'delivery_partner', 'order_type', 'status', 'order_items',
-            'coupon', 'total_price', 'discount_applied', 'final_price', 'created_at'
+            'id', 'customer_first_name', 'customer_last_name', 'branch', 'delivery_partner', 'order_type',
+            'status', 'order_items', 'coupon', 'total_price', 'discount_applied', 'final_price', 'created_at'
         ]
+
+    def get_customer_first_name(self, obj):
+        return obj.customer.first_name
+
+    def get_customer_last_name(self, obj):
+        return obj.customer.last_name
