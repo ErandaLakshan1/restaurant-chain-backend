@@ -42,9 +42,6 @@ def create_staff(request, *args, **kwargs):
     user_type = getattr(user, 'user_type')
     user_branch = getattr(user, 'branch')
 
-    print(user_branch.pk)
-    print(request.data['branch'])
-    print(user_branch.pk != request.data['branch'])
 
     if user_type not in ['admin', 'manager']:
         return Response({"detail": "You do not have permission to perform this action."},
