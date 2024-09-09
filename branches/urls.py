@@ -2,15 +2,22 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    path('get_branches/', views.get_branches),
-    path('get_branches/<int:pk>/', views.get_branches),
 
-    path('add_branch/', views.create_branch),
-    path('add_branch_images/<int:branch_id>/', views.add_images_to_branch),
+    path('branches/', views.get_branches, name='get_branches'),
+    path('branches/<int:pk>/', views.get_branches, name='get_branch'),
 
-    path('update_branch/<int:pk>/', views.update_branch),
 
-    path('delete_branch/<int:pk>/', views.delete_branch),
+    path('branches/add/', views.create_branch, name='create_branch'),
 
-    path('delete_branch_image/<int:image_id>/', views.delete_branch_image),
+
+    path('branches/<int:branch_id>/add-images/', views.add_images_to_branch, name='add_images_to_branch'),
+
+
+    path('branches/<int:pk>/update/', views.update_branch, name='update_branch'),
+
+
+    path('branches/<int:pk>/delete/', views.delete_branch, name='delete_branch'),
+
+
+    path('branch-images/<int:image_id>/delete/', views.delete_branch_image, name='delete_branch_image'),
 ]
