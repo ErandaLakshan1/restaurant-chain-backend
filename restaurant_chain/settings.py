@@ -36,6 +36,7 @@ DEBUG = True
 CORS_ORIGIN_ALLOW_ALL = True
 
 ALLOWED_HOSTS = ['*']
+CSRF_TRUSTED_ORIGINS = ['https://restaurant-chain-backend.up.railway.app']
 
 # Application definition
 
