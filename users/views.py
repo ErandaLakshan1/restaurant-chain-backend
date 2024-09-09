@@ -42,7 +42,6 @@ def create_staff(request, *args, **kwargs):
     user_type = getattr(user, 'user_type')
     user_branch = getattr(user, 'branch')
 
-
     if user_type not in ['admin', 'manager']:
         return Response({"detail": "You do not have permission to perform this action."},
                         status=status.HTTP_403_FORBIDDEN)
