@@ -9,9 +9,18 @@ class TableSerializer(serializers.ModelSerializer):
 
 
 class ReservationSerializer(serializers.ModelSerializer):
+    customer_first_name = serializers.SerializerMethodField()
+    customer_last_name = serializers.SerializerMethodField()
+
     class Meta:
         model = Reservation
-        fields = '__all__'
+        fields = ['id', 'customer_first_name', 'customer_last_name', 'table', 'reservation_date']
+
+    def get_customer_first_name(self, obj):
+        return obj.customer.first_name
+
+    def get_customer_last_name(self, obj):
+        return obj.customer.last_name
 
     def validate(self, data):
         instance = getattr(self, 'instance', None)
