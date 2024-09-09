@@ -12,12 +12,12 @@ User = get_user_model()
 
 class MenuTests(TestCase):
     def setUp(self):
-        # Create a branch with all required fields
+
         self.branch = Branch.objects.create(
             name='Test Branch',
             address='Test Address',
-            longitude=12.345,  # Provide a valid longitude
-            latitude=67.890  # Provide a valid latitude if required
+            longitude=12.345,
+            latitude=67.890
         )
 
         # Create users with unique email addresses
@@ -31,7 +31,6 @@ class MenuTests(TestCase):
         self.user_customer = User.objects.create_user(username='customer', email='customer@example.com',
                                                       password='customerpassword', user_type='customer')
 
-        # Set up API client and authenticate users
         self.client = APIClient()
 
     def authenticate_user(self, user):
