@@ -17,7 +17,7 @@ import os
 import dj_database_url
 from dotenv import load_dotenv
 
-from data import email, app_password, secret_key
+# from data import email, app_password, secret_key
 
 load_dotenv()
 
