@@ -7,7 +7,15 @@ from dotenv import load_dotenv
 # from data import firebase_bucket_url
 load_dotenv()
 
-cred_dict = json.loads(os.getenv('FIREBASE_CREDENTIALS_JSON'))
+firebase_cred_json = os.getenv('FIREBASE_CREDENTIALS_JSON')
+
+if not firebase_cred_json:
+    raise ValueError("FIREBASE_CREDENTIALS_JSON environment variable is not set.")
+
+try:
+    cred_dict = json.loads(firebase_cred_json)
+except json.JSONDecodeError as e:
+    raise ValueError(f"Error decoding JSON from FIREBASE_CREDENTIALS_JSON: {e}")
 # initialize the Firebase Admin SDK
 cred = credentials.Certificate(cred_dict)
 # initialize the Firebase Admin SDK
