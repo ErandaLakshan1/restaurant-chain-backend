@@ -3,7 +3,7 @@ from firebase_admin import credentials, storage
 import os
 
 from dotenv import load_dotenv
-from data import firebase_bucket_url
+# from data import firebase_bucket_url
 load_dotenv()
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
