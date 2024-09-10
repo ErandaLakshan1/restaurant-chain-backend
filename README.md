@@ -27,7 +27,7 @@ The **Restaurant Chain Management System** is a backend API developed using **Dj
 
 ### 1. Clone the repository
 ```bash
-git clone https://github.com/yourusername/restaurant-chain-management.git
+git@github.com:ErandaLakshan1/restaurant-chain-backend.git
 cd restaurant-chain-management
 ```
 
